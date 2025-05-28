@@ -1,3 +1,5 @@
+# Страница регистрации
+
 import streamlit as st
 import psycopg2
 from psycopg2 import Error

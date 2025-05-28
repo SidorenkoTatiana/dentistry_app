@@ -1,5 +1,4 @@
 # Страница аутентификации
-# В визуале: добавить кнопку регистрации
 
 import streamlit as st
 import psycopg2
