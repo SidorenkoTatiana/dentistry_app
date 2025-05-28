@@ -3,14 +3,14 @@
 import streamlit as st
 
 
-def config_page():
-    st.set_page_config(
-        page_title="Панель управления",
-        layout="wide"
-    )
+# def config_page():
+#     st.set_page_config(
+#         page_title="Панель управления",
+#         layout="wide"
+    # )
 
 def dashboard_page():
-    config_page()
+    # config_page()
     
     if 'user_id' not in st.session_state or st.session_state.user_id is None:
         st.warning("Пожалуйста, войдите в систему")
@@ -24,7 +24,7 @@ def dashboard_page():
     if st.button("Выйти"):
         st.session_state.clear()
         st.session_state.current_page = "login"
-        st.experimental_rerun()
+        st.rerun()
 
 if __name__ == "__main__":
     dashboard_page()

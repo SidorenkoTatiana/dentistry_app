@@ -1,24 +1,32 @@
+import sys
+from pathlib import Path
+
+# Добавляем корень проекта в PYTHONPATH
+sys.path.append(str(Path(__file__).parent.parent))
+
 import streamlit as st
+from app import PAGES
+
 
 def main():
     st.set_page_config(
         page_title="Стоматологическая клиника",
         layout="wide"
     )
-    
-    # Инициализация session_state
-    if 'user_id' not in st.session_state:
-        st.session_state.user_id = None
-    if 'doctor_id' not in st.session_state:
-        st.session_state.doctor_id = None
-    if 'curator_id' not in st.session_state:
-        st.session_state.curator_id = None
-    if 'full_name' not in st.session_state:
-        st.session_state.full_name = None
-    
-    # Отображаем страницу входа по умолчанию
-    from dentistry_app.app.pages.login import login_page
-    login_page()
+
+    # Инициализация состояния страницы
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "login"
+
+    # Загрузка текущей страницы
+    page = PAGES.get(st.session_state.current_page)
+    if page:
+        page()
+    else:
+        st.error("Страница не найдена")
+        st.session_state.current_page = "login"
+        st.experimental_rerun()
+
 
 if __name__ == "__main__":
     main()

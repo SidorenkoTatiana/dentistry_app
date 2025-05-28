@@ -7,14 +7,6 @@ from psycopg2 import Error
 import hashlib
 
 
-# Настройка страницы
-def config_page():
-    st.set_page_config(
-        page_title="Аутентификация",
-        layout="centered"
-    )
-
-
 # CSS стили
 def local_css():
     st.markdown(f"""
@@ -73,17 +65,17 @@ def check_login(username, password):
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
         
         cursor.execute("""
-            SELECT a.id, a.id_врача, a.id_куратора, 
+            SELECT a.id, a.id_Врача, a.id_Куратора, 
                    COALESCE(d.Фамилия || ' ' || d.Имя || ' ' || d.Отчество, k.Фамилия || ' ' || k.Имя || ' ' || k.Отчество) as full_name
-            FROM Аутентификация a
-            LEFT JOIN Врач d ON a.id_врача = d.id
-            LEFT JOIN Куратор k ON a.id_куратора = k.id
-            WHERE a.логин = %s AND a.пароль = %s
+            FROM Аутентификатор a
+            LEFT JOIN Врач d ON a.id_Врача = d.id
+            LEFT JOIN Куратор k ON a.id_Куратора = k.id
+            WHERE a.Логин = %s AND a.Пароль = %s
         """, (username, hashed_password))
-        
+
         result = cursor.fetchone()
         return result
-        
+ 
     except Error as e:
         st.error(f"Ошибка выполнения запроса: {e}")
         return None
@@ -91,14 +83,15 @@ def check_login(username, password):
         if connection:
             connection.close()
 
+
 # Отображение логотипа
 def show_logo():
     try:
         _, col, _ = st.columns([1, 2, 1])  # Более компактная запись
         with col:
-            st.image("dentistry_app/static/logo2.png", 
-                    width=500,  # Увеличиваем размер
-                    use_container_width='auto')
+            st.image("dentistry_app/static/logo2.png",
+                     width=500,
+                     use_container_width='auto')
     except Exception as e:
         st.markdown("""
         <div style="text-align: center; margin: 2rem 0;">
@@ -107,9 +100,9 @@ def show_logo():
         """, unsafe_allow_html=True)
         st.error(f"Ошибка загрузки логотипа: {e}")
 
+
 # Основная функция страницы
 def login_page():
-    config_page()
     local_css()
     show_logo()
     st.title("Вход в систему")
@@ -120,12 +113,12 @@ def login_page():
         
         col1, col2 = st.columns(2)
         with col1:
-            if st.form_submit_button("Войти"):
+            if st.form_submit_button("Вход"):
                 handle_login(username, password)
         with col2:
             if st.form_submit_button("Регистрация"):
                 st.session_state.current_page = "registration"
-                st.experimental_rerun()
+                st.rerun()
 
 # Обработка входа
 def handle_login(username, password):
@@ -139,7 +132,7 @@ def handle_login(username, password):
                 'full_name': user_data[3],
                 'current_page': 'dashboard'
             })
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Неверный логин или пароль")
     else:
