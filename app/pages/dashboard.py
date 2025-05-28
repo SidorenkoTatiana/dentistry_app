@@ -12,6 +12,7 @@ conn = psycopg2.connect(
 )
 cursor = conn.cursor()
 
+
 # CSS стили
 def set_css():
     st.markdown(f"""
@@ -79,14 +80,15 @@ def get_user_type(user_id, doctor_id, curator_id):
     else:
         return "Неизвестный тип"
 
+
 def show_logo():
     try:
         st.markdown('<div class="logo-container">', unsafe_allow_html=True)
         _, col, _ = st.columns([1, 2, 1])
         with col:
             st.image("dentistry_app/static/logo2.png",
-                    width=500,
-                    use_container_width='auto')
+                     width=500,
+                     use_container_width='auto')
         st.markdown('</div>', unsafe_allow_html=True)
     except Exception as e:
         st.markdown("""
@@ -98,28 +100,25 @@ def show_logo():
 
 
 def dashboard_page():
-    set_css()  # Применяем CSS стили
-    
-    # Инициализация состояния меню
+    set_css()
+
     if 'show_user_menu' not in st.session_state:
         st.session_state.show_user_menu = False
-    
-    # Проверяем авторизацию
+
     if 'full_name' not in st.session_state:
         st.error("Пожалуйста, войдите в систему")
         st.session_state.current_page = "login"
         st.rerun()
         return
-    
-    # Получаем данные из сессии
+
     full_name = st.session_state.get('full_name', 'Неизвестный пользователь')
     doctor_id = st.session_state.get('doctor_id')
     curator_id = st.session_state.get('curator_id')
-    user_type = get_user_type(st.session_state['user_id'], doctor_id, curator_id)
-    
-    # Определяем букву для аватарки
+    user_type = get_user_type(st.session_state['user_id'],
+                              doctor_id, curator_id)
+
     avatar_letter = user_type[0] if user_type != "Неизвестный тип" else "U"
-    # Панель пользователя (фиксированная позиция)
+
     st.markdown(f"""
     <div class="user-panel">
         <div class="user-avatar" onclick="window.streamlitApi.runMethod('toggle_menu')">{avatar_letter}</div>
@@ -129,14 +128,12 @@ def dashboard_page():
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
-    # Обработка клика по аватару
+
     if st.session_state.get('toggle_menu'):
         st.session_state.show_user_menu = not st.session_state.show_user_menu
         st.session_state.toggle_menu = False
         st.rerun()
-    
-    # Выпадающее меню
+
     if st.session_state.show_user_menu:
         st.markdown("""
         <div class="user-menu">
@@ -144,19 +141,17 @@ def dashboard_page():
             <button onclick="window.streamlitApi.runMethod('logout_clicked')" class="stButton">Выход</button>
         </div>
         """, unsafe_allow_html=True)
-    
-    # Основное содержимое
+
     st.markdown('<div class="main-content">', unsafe_allow_html=True)
     show_logo()
     st.write("Выберите действие")
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Обработка действий меню
+
     if st.session_state.get('profile_clicked'):
         st.session_state.profile_clicked = False
         st.session_state.current_page = "profile"
         st.rerun()
-    
+
     if st.session_state.get('logout_clicked'):
         st.session_state.logout_clicked = False
         for key in list(st.session_state.keys()):

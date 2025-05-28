@@ -51,20 +51,20 @@ def create_connection():
         st.error(f"Ошибка подключения к базе данных: {e}")
         return None
 
+
 # Проверка логина и пароля
 def check_login(username, password):
     connection = create_connection()
     if connection is None:
         return None
-    
+
     try:
         cursor = connection.cursor()
-        
-        # Хеширование пароля для сравнения
+
         hashed_password = hashlib.sha256(password.encode()).hexdigest()
-        
+
         cursor.execute("""
-            SELECT a.id, a.id_Врача, a.id_Куратора, 
+            SELECT a.id, a.id_Врача, a.id_Куратора,
                    COALESCE(d.Фамилия || ' ' || d.Имя || ' ' || d.Отчество, k.Фамилия || ' ' || k.Имя || ' ' || k.Отчество) as full_name
             FROM Аутентификатор a
             LEFT JOIN Врач d ON a.id_Врача = d.id
@@ -74,7 +74,7 @@ def check_login(username, password):
 
         result = cursor.fetchone()
         return result
- 
+
     except Error as e:
         st.error(f"Ошибка выполнения запроса: {e}")
         return None
@@ -86,7 +86,7 @@ def check_login(username, password):
 # Отображение логотипа
 def show_logo():
     try:
-        _, col, _ = st.columns([1, 2, 1])  # Более компактная запись
+        _, col, _ = st.columns([1, 2, 1])
         with col:
             st.image("dentistry_app/static/logo2.png",
                      width=500,
@@ -105,11 +105,11 @@ def login_page():
     local_css()
     show_logo()
     st.title("Вход в систему")
-    
+
     with st.form("login_form"):
         username = st.text_input("Логин", key="username")
         password = st.text_input("Пароль", type="password", key="password")
-        
+
         col1, col2 = st.columns(2)
         with col1:
             if st.form_submit_button("Вход"):
@@ -118,6 +118,7 @@ def login_page():
             if st.form_submit_button("Регистрация"):
                 st.session_state.current_page = "registration"
                 st.rerun()
+
 
 # Обработка входа
 def handle_login(username, password):
@@ -136,6 +137,7 @@ def handle_login(username, password):
             st.error("Неверный логин или пароль")
     else:
         st.warning("Пожалуйста, введите логин и пароль")
+
 
 if __name__ == "__main__":
     login_page()

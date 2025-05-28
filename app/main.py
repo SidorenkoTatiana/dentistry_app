@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-# Добавляем корень проекта в PYTHONPATH
 sys.path.append(str(Path(__file__).parent.parent))
 
 import streamlit as st
@@ -14,11 +13,9 @@ def main():
         layout="wide"
     )
 
-    # Инициализация состояния страницы
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "login"
 
-    # Загрузка текущей страницы
     page = PAGES.get(st.session_state.current_page)
     if page:
         page()

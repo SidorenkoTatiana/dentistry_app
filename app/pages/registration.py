@@ -21,7 +21,6 @@ def registration_page():
 
     st.subheader("Регистрация")
 
-    # Форма для ввода всех данных
     user_type = st.selectbox("Тип пользователя", ("Куратор", "Врач"))
     surname = st.text_input("Фамилия")
     name = st.text_input("Имя")
@@ -74,7 +73,7 @@ def registration_page():
                 """,
                 (login, hashed_password, doctor_id)
             )
-    
+
         conn.commit()
         st.session_state.current_page = "login"
         st.rerun()
