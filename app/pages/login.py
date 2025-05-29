@@ -125,12 +125,15 @@ def handle_login(username, password):
     if username and password:
         user_data = check_login(username, password)
         if user_data:
+            # Определяем тип пользователя
+            is_doctor = user_data[1] is not None  # Если doctor_id не None - это врач
+            
             st.session_state.update({
                 'user_id': user_data[0],
                 'doctor_id': user_data[1],
                 'curator_id': user_data[2],
                 'full_name': user_data[3],
-                'current_page': 'dashboard'
+                'current_page': 'schedule' if is_doctor else 'dashboard'
             })
             st.rerun()
         else:

@@ -1,4 +1,4 @@
-# Расписание
+# Страница управления пользователем
 import streamlit as st
 import psycopg2
 from psycopg2 import Error
@@ -15,9 +15,9 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 
 
-def schedule_page():
-    st.title("Расписание")
+def profile_page():
+    st.title("Профиль")
 
 
 if __name__ == "__main__":
-    schedule_page()
+    profile_page()

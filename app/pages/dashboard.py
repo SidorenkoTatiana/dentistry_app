@@ -12,7 +12,6 @@ conn = psycopg2.connect(
 )
 cursor = conn.cursor()
 
-
 # CSS стили
 def set_css():
     st.markdown(f"""
@@ -22,17 +21,10 @@ def set_css():
             color: #fff;
         }}
         .user-panel {{
-            position: fixed;
-            top: 20px;
-            left: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
-            z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }}
         .user-avatar {{
             width: 40px;
@@ -47,25 +39,31 @@ def set_css():
             font-size: 18px;
             cursor: pointer;
         }}
-        .user-menu {{
-            position: absolute;
-            top: 60px;
-            left: 0;
+        .control-panel {{
+            padding: 15px;
             background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-radius: 4px;
-            padding: 10px;
-            z-index: 1001;
-            width: 150px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }}
+        .control-panel.show {{
+            display: block;
         }}
         .main-content {{
-            margin-top: 100px;
-            padding: 20px;
+            padding-left: 20px;
         }}
-        .logo-container {{
-            display: flex;
-            justify-content: center;
-            margin-bottom: 2rem;
+        .overlay {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+            display: none;
+        }}
+        .overlay.show {{
+            display: block;
         }}
     </style>
     """, unsafe_allow_html=True)
@@ -81,84 +79,98 @@ def get_user_type(user_id, doctor_id, curator_id):
         return "Неизвестный тип"
 
 
-def show_logo():
-    try:
-        st.markdown('<div class="logo-container">', unsafe_allow_html=True)
-        _, col, _ = st.columns([1, 2, 1])
-        with col:
-            st.image("dentistry_app/static/logo2.png",
-                     width=500,
-                     use_container_width='auto')
-        st.markdown('</div>', unsafe_allow_html=True)
-    except Exception as e:
-        st.markdown("""
-        <div style="text-align: center; margin: 2rem 0;">
-            <h1 style="color: #ff6900;">Стоматологическая клиника</h1>
-        </div>
-        """, unsafe_allow_html=True)
-        st.error(f"Ошибка загрузки логотипа: {e}")
-
-
 def dashboard_page():
-    set_css()
+    set_css()  # Применяем CSS стили
+  
+    if 'show_control_panel' not in st.session_state:
+        st.session_state.show_control_panel = False
 
-    if 'show_user_menu' not in st.session_state:
-        st.session_state.show_user_menu = False
-
+    # Проверяем авторизацию
     if 'full_name' not in st.session_state:
         st.error("Пожалуйста, войдите в систему")
         st.session_state.current_page = "login"
         st.rerun()
         return
-
-    full_name = st.session_state.get('full_name', 'Неизвестный пользователь')
-    doctor_id = st.session_state.get('doctor_id')
-    curator_id = st.session_state.get('curator_id')
-    user_type = get_user_type(st.session_state['user_id'],
-                              doctor_id, curator_id)
-
-    avatar_letter = user_type[0] if user_type != "Неизвестный тип" else "U"
-
-    st.markdown(f"""
-    <div class="user-panel">
-        <div class="user-avatar" onclick="window.streamlitApi.runMethod('toggle_menu')">{avatar_letter}</div>
-        <div>
-            <div><strong>{full_name}</strong></div>
-            <div>{user_type}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if st.session_state.get('toggle_menu'):
-        st.session_state.show_user_menu = not st.session_state.show_user_menu
-        st.session_state.toggle_menu = False
-        st.rerun()
-
-    if st.session_state.show_user_menu:
-        st.markdown("""
-        <div class="user-menu">
-            <button onclick="window.streamlitApi.runMethod('profile_clicked')" class="stButton">Профиль</button>
-            <button onclick="window.streamlitApi.runMethod('logout_clicked')" class="stButton">Выход</button>
+    
+    # Создаем две колонки - для панели управления и основного контента
+    control_col, content_col = st.columns([2, 8], gap="medium")
+    
+    # Панель управления в левой колонке
+    with control_col:
+        # Получаем данные из сессии
+        full_name = st.session_state.get('full_name', 'Неизвестный пользователь')
+        doctor_id = st.session_state.get('doctor_id')
+        curator_id = st.session_state.get('curator_id')
+        user_type = get_user_type(st.session_state['user_id'], doctor_id, curator_id)
+        
+        # Определяем букву для аватарки
+        avatar_letter = user_type[0] if user_type != "Неизвестный тип" else "U"
+        
+        # Кнопка-аватар
+        if st.button(avatar_letter, key="avatar_button"):
+            st.session_state.show_control_panel = not st.session_state.show_control_panel
+            st.rerun()
+        
+        # Панель пользователя
+        st.markdown(f"""
+        <div class="user-panel">
+            <div>
+                <div><strong>{full_name}</strong></div>
+                <div>{user_type}</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Панель управления (появляется при нажатии на аватар)
+        if st.session_state.show_control_panel:
+            with st.container():
+                if st.button("Профиль", use_container_width=True):
+                    st.session_state.current_page = "profile"
+                    st.rerun()
+                
+                if st.button("Выход", use_container_width=True):
+                    # Очищаем сессию
+                    for key in list(st.session_state.keys()):
+                        del st.session_state[key]
+                    st.session_state.current_page = "login"
+                    st.rerun()
+    
+    # Основной контент в правой колонке
+    with content_col:
+        st.markdown('<div class="main-content">', unsafe_allow_html=True)
+        
+        # Создаем 3 колонки (левая пустая, центральная для лого, правая пустая)
+        left_space, center_col, right_space = st.columns([1, 2, 1])
+        
+        with center_col:
+            st.image("dentistry_app/static/logo2.png",
+                     width=500,
+                     use_container_width='auto')
+            st.markdown("""
+            <div style="text-align: center; margin: 2rem 0;">
+                <h1 style="color: #ff6900;">Меню выбора</h1>
+            </div>
+            """, unsafe_allow_html=True)
 
-    st.markdown('<div class="main-content">', unsafe_allow_html=True)
-    show_logo()
-    st.write("Выберите действие")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    if st.session_state.get('profile_clicked'):
-        st.session_state.profile_clicked = False
-        st.session_state.current_page = "profile"
-        st.rerun()
-
-    if st.session_state.get('logout_clicked'):
-        st.session_state.logout_clicked = False
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.session_state.current_page = "login"
-        st.rerun()
-
+        with st.form("dashboard"):
+            cols = st.columns(3)  # Создаем 3 равные колонки
+            
+            with cols[0]:  # Первая колонка
+                if st.form_submit_button("Расписание"):
+                    st.session_state.current_page = "schedule"
+                    st.rerun()
+            
+            with cols[1]:  # Центральная колонка
+                if st.form_submit_button("Запись на приём"):
+                    st.session_state.current_page = "service"
+                    st.rerun()
+            
+            with cols[2]:  # Последняя колонка
+                if st.form_submit_button("Пациенты"):
+                    st.session_state.current_page = "patient"
+                    st.rerun()
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     dashboard_page()

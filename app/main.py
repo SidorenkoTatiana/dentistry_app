@@ -22,7 +22,7 @@ def main():
     else:
         st.error("Страница не найдена")
         st.session_state.current_page = "login"
-        st.experimental_rerun()
+        st.rerun()
 
 
 if __name__ == "__main__":
