@@ -80,7 +80,7 @@ def user_panel():
             if st.button("Профиль", use_container_width=True):
                 st.session_state.current_page = "profile"
                 st.rerun()
-            
+
             if st.button("Выход", use_container_width=True):
                 for key in list(st.session_state.keys()):
                     del st.session_state[key]

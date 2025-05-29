@@ -20,10 +20,7 @@ def set_css():
             margin-left: 250px;
             padding: 20px;
         }
-        .stButton>button {
-            background-color: #ff6900;
-            color: #fff;
-        }
+
     </style>
     """, unsafe_allow_html=True)
 
