@@ -1,5 +1,17 @@
 import streamlit as st
+# import psycopg2
 
+
+# подключение к базе данных
+# def connection():
+#     conn = psycopg2.connect(
+#         host="25.18.189.11",
+#         port="5489",
+#         dbname="postgres",
+#         user="postgres",
+#         password="TW3VJywpTx"
+#     )
+#     cursor = conn.cursor()
 
 # проверка входа в систему
 def check_login():
@@ -86,3 +98,10 @@ def user_panel():
                     del st.session_state[key]
                 st.session_state.current_page = "login"
                 st.rerun()
+
+
+# отображение мини-логотипа справа
+def mini_logo_right():
+    col1, col2 = st.columns([0.9, 0.1])
+    with col2:
+        st.image("dentistry_app/static/logo1.png", width=70)

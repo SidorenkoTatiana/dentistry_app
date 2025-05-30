@@ -1,6 +1,6 @@
 import streamlit as st
 import psycopg2
-from functious import user_panel, check_login
+from functions import user_panel, check_login
 
 conn = psycopg2.connect(
     host="25.18.189.11",

@@ -4,6 +4,7 @@ import streamlit as st
 import psycopg2
 from psycopg2 import Error
 import hashlib
+from functions import mini_logo_right
 
 
 conn = psycopg2.connect(
@@ -17,9 +18,11 @@ cursor = conn.cursor()
 
 
 def registration_page():
-    st.title("Регистрация")
-
-    st.subheader("Регистрация")
+    left_col, right_col = st.columns([1, 1], gap="medium")
+    with left_col:
+        st.title("Регистрация")
+    with right_col:
+        mini_logo_right()
 
     user_type = st.selectbox("Тип пользователя", ("Куратор", "Врач"))
     surname = st.text_input("Фамилия")
