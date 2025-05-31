@@ -1,9 +1,8 @@
 # Страница аутентификации
 
 import streamlit as st
-import psycopg2
-from psycopg2 import Error
 import hashlib
+from connection import conn, cursor
 
 
 # CSS стили
@@ -36,74 +35,31 @@ def local_css():
     """, unsafe_allow_html=True)
 
 
-# Подключение к базе данных
-def create_connection():
-    try:
-        connection = psycopg2.connect(
-            user="postgres",
-            password="TW3VJywpTx",
-            host="25.18.189.11",
-            port="5489",
-            database="postgres"
-        )
-        return connection
-    except Error as e:
-        st.error(f"Ошибка подключения к базе данных: {e}")
-        return None
-
-
 # Проверка логина и пароля
 def check_login(username, password):
-    connection = create_connection()
-    if connection is None:
-        return None
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
-    try:
-        cursor = connection.cursor()
+    cursor.execute("""
+        SELECT a.id, a.id_Врача, a.id_Куратора,
+                COALESCE(d.Фамилия || ' ' || d.Имя || ' ' || d.Отчество, k.Фамилия || ' ' || k.Имя || ' ' || k.Отчество) as full_name
+        FROM Аутентификатор a
+        LEFT JOIN Врач d ON a.id_Врача = d.id
+        LEFT JOIN Куратор k ON a.id_Куратора = k.id
+        WHERE a.Логин = %s AND a.Пароль = %s
+    """, (username, hashed_password))
 
-        hashed_password = hashlib.sha256(password.encode()).hexdigest()
-
-        cursor.execute("""
-            SELECT a.id, a.id_Врача, a.id_Куратора,
-                   COALESCE(d.Фамилия || ' ' || d.Имя || ' ' || d.Отчество, k.Фамилия || ' ' || k.Имя || ' ' || k.Отчество) as full_name
-            FROM Аутентификатор a
-            LEFT JOIN Врач d ON a.id_Врача = d.id
-            LEFT JOIN Куратор k ON a.id_Куратора = k.id
-            WHERE a.Логин = %s AND a.Пароль = %s
-        """, (username, hashed_password))
-
-        result = cursor.fetchone()
-        return result
-
-    except Error as e:
-        st.error(f"Ошибка выполнения запроса: {e}")
-        return None
-    finally:
-        if connection:
-            connection.close()
-
-
-# Отображение логотипа
-def show_logo():
-    try:
-        _, col, _ = st.columns([1, 2, 1])
-        with col:
-            st.image("dentistry_app/static/logo2.png",
-                     width=500,
-                     use_container_width='auto')
-    except Exception as e:
-        st.markdown("""
-        <div style="text-align: center; margin: 2rem 0;">
-            <h1 style="color: #ff6900;">Стоматологическая клиника</h1>
-        </div>
-        """, unsafe_allow_html=True)
-        st.error(f"Ошибка загрузки логотипа: {e}")
+    result = cursor.fetchone()
+    return result
 
 
 # Основная функция страницы
 def login_page():
     local_css()
-    show_logo()
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
+        st.image("dentistry_app/static/logo2.png",
+                 width=500,
+                 use_container_width='auto')
     st.title("Вход в систему")
 
     with st.form("login_form"):

@@ -1,89 +1,56 @@
 # Страница управления пользователем
 import streamlit as st
-import psycopg2
+from connection import conn, cursor
 from psycopg2 import Error
 from functions import user_panel, check_login, mini_logo_right
 
 
-def get_db_connection():
-    """Создает новое соединение с БД"""
-    return psycopg2.connect(
-        host="25.18.189.11",
-        port="5489",
-        dbname="postgres",
-        user="postgres",
-        password="TW3VJywpTx"
-    )
-
-
 # Загрузка данных пользователя
 def load_user_data():
-    conn = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        if st.session_state.get('doctor_id'):
-            cursor.execute(
-                """
-                SELECT 'Врач' as user_type, Фамилия, Имя, Отчество, Номер_телефона
-                FROM Врач 
-                WHERE id = %s
-                """,
-                (st.session_state['doctor_id'],))
-        else:
-            cursor.execute(
-                """
-                SELECT 'Куратор' as user_type, Фамилия, Имя, Отчество, Номер_телефона
-                FROM Куратор 
-                WHERE id = %s
-                """,
-                (st.session_state['curator_id'],))
+    if st.session_state.get('doctor_id'):
+        cursor.execute(
+            """
+            SELECT 'Врач' as user_type, Фамилия, Имя, Отчество, Номер_телефона
+            FROM Врач 
+            WHERE id = %s
+            """,
+            (st.session_state['doctor_id'],))
+    else:
+        cursor.execute(
+            """
+            SELECT 'Куратор' as user_type, Фамилия, Имя, Отчество, Номер_телефона
+            FROM Куратор 
+            WHERE id = %s
+            """,
+            (st.session_state['curator_id'],))
 
-        return cursor.fetchone()
-    except Error as e:
-        st.error(f"Ошибка загрузки данных: {e}")
-        return None
-    finally:
-        if conn:
-            conn.close()
+    return cursor.fetchone()
+
 
 # Сохранение изменений
 def save_changes(surname, name, patronymic, phone):
-    conn = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+    if st.session_state.get('doctor_id'):
+        cursor.execute(
+            """
+            UPDATE Врач 
+            SET Фамилия = %s, Имя = %s, Отчество = %s, Номер_телефона = %s
+            WHERE id = %s
+            """,
+            (surname, name, patronymic, phone, st.session_state['doctor_id']))
+    else:
+        cursor.execute(
+            """
+            UPDATE Куратор 
+            SET Фамилия = %s, Имя = %s, Отчество = %s, Номер_телефона = %s
+            WHERE id = %s
+            """,
+            (surname, name, patronymic, phone, st.session_state['curator_id']))
 
-        if st.session_state.get('doctor_id'):
-            cursor.execute(
-                """
-                UPDATE Врач 
-                SET Фамилия = %s, Имя = %s, Отчество = %s, Номер_телефона = %s
-                WHERE id = %s
-                """,
-                (surname, name, patronymic, phone, st.session_state['doctor_id']))
-        else:
-            cursor.execute(
-                """
-                UPDATE Куратор 
-                SET Фамилия = %s, Имя = %s, Отчество = %s, Номер_телефона = %s
-                WHERE id = %s
-                """,
-                (surname, name, patronymic, phone, st.session_state['curator_id']))
+    conn.commit()
+    st.success("Изменения сохранены успешно!")
+    st.session_state.full_name = f"{surname} {name} {patronymic}"
+    return True
 
-        conn.commit()
-        st.success("Изменения сохранены успешно!")
-        st.session_state.full_name = f"{surname} {name} {patronymic}"
-        return True
-    except Error as e:
-        if conn:
-            conn.rollback()
-        st.error(f"Ошибка сохранения данных: {e}")
-        return False
-    finally:
-        if conn:
-            conn.close()
 
 def profile_page():
     check_login()

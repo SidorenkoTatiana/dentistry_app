@@ -1,17 +1,5 @@
 import streamlit as st
-# import psycopg2
 
-
-# подключение к базе данных
-# def connection():
-#     conn = psycopg2.connect(
-#         host="25.18.189.11",
-#         port="5489",
-#         dbname="postgres",
-#         user="postgres",
-#         password="TW3VJywpTx"
-#     )
-#     cursor = conn.cursor()
 
 # проверка входа в систему
 def check_login():

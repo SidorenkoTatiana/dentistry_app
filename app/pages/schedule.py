@@ -1,19 +1,9 @@
 # Расписание
 import streamlit as st
-import psycopg2
-from psycopg2 import Error
+from connection import conn, cursor
 from datetime import datetime, timedelta, date
 from functions import user_panel, check_login, mini_logo_right
 
-# Подключение к БД
-conn = psycopg2.connect(
-    host="25.18.189.11",
-    port="5489",
-    dbname="postgres",
-    user="postgres",
-    password="TW3VJywpTx"
-)
-cursor = conn.cursor()
 
 def search_participants(participant_type, search_term):
     """Поиск участников в базе данных"""
@@ -69,6 +59,7 @@ def get_week_schedule(participant_id=None, participant_type=None, week_start=Non
     cursor.execute(query, (week_start, week_end, participant_id))
     return cursor.fetchall()
 
+
 def display_week_calendar(week_start, schedule_data):
     """Отображает расписание в виде недельного календаря"""
     days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
@@ -102,6 +93,8 @@ def display_week_calendar(week_start, schedule_data):
                     if record[3]:
                         st.write(f"**Комментарий:** {record[3]}")
 
+
+
 def schedule_page():
     check_login()
     
@@ -131,55 +124,86 @@ def schedule_page():
             </div>
             """, unsafe_allow_html=True)
         
-        # Поиск участников
-        left_col, right_col = st.columns([1, 1], gap="medium")
-        with left_col:
-            participant_type = st.selectbox(
-                "Участник", 
-                ("Пациент", "Врач"),
-                key='participant_type_select',
-                on_change=lambda: [
-                    setattr(st.session_state, 'selected_participant', None),
-                    setattr(st.session_state, 'search_query', ""),
-                    setattr(st.session_state, 'show_dropdown', False)
-                ])
+        is_doctor = st.session_state.get('doctor_id') is not None
         
-        with right_col:
-            search_input = st.text_input(
-                "Введите имя участника для поиска",
-                key='search_input',
-                value=st.session_state.search_query,
-                on_change=lambda: [
-                    setattr(st.session_state, 'search_query', st.session_state.search_input),
-                    setattr(st.session_state, 'show_dropdown', len(st.session_state.search_input) > 2)
-                ])
+        # Инициализация состояния
+        if 'current_week' not in st.session_state:
+            today = date.today()
+            st.session_state.current_week = today - timedelta(days=today.weekday())
+        
+        # Для врача сразу устанавливаем его как выбранного участника
+        if is_doctor and 'selected_participant' not in st.session_state:
+            cursor.execute("SELECT id, Фамилия, Имя, Отчество FROM Врач WHERE id = %s", 
+                        (st.session_state['doctor_id'],))
+            doctor = cursor.fetchone()
+            if doctor:
+                st.session_state.selected_participant = {
+                    'id': doctor[0],
+                    'type': "Врач",
+                    'name': f"{doctor[1]} {doctor[2]} {doctor[3] or ''}"
+                }
+
+        if not is_doctor:
+            # Инициализация дополнительных состояний для куратора
+            if 'participant_type' not in st.session_state:
+                st.session_state.participant_type = "Врач"
+            if 'search_query' not in st.session_state:
+                st.session_state.search_query = ""
+            if 'show_dropdown' not in st.session_state:
+                st.session_state.show_dropdown = False
             
-            # Выпадающий список с результатами
-            if st.session_state.show_dropdown and st.session_state.search_query:
-                st.session_state.search_results = search_participants(
-                    st.session_state.participant_type_select,
-                    st.session_state.search_query
-                )
+            # Поиск участников
+            left_col, right_col = st.columns([1, 1], gap="medium")
+            with left_col:
+                participant_type = st.selectbox(
+                    "Участник", 
+                    ("Пациент", "Врач"),
+                    key='participant_type_select',
+                    on_change=lambda: [
+                        setattr(st.session_state, 'selected_participant', None),
+                        setattr(st.session_state, 'search_query', ""),
+                        setattr(st.session_state, 'show_dropdown', False)
+                    ])
+            
+            with right_col:
+                search_input = st.text_input(
+                    "Введите имя участника для поиска",
+                    key='search_input',
+                    value=st.session_state.search_query,
+                    on_change=lambda: [
+                        setattr(st.session_state, 'search_query', st.session_state.search_input),
+                        setattr(st.session_state, 'show_dropdown', len(st.session_state.search_input) > 2)
+                    ])
                 
-                if st.session_state.search_results:
-                    with st.expander("Результаты поиска", expanded=True):
-                        for person in st.session_state.search_results:
-                            full_name = f"{person[1]} {person[2]} {person[3]}"
-                            if st.button(full_name):
-                                st.session_state.selected_participant = {
-                                    'id': person[0],
-                                    'type': participant_type,
-                                    'name': full_name
-                                }
-                                st.session_state.search_query = full_name
-                                st.session_state.show_dropdown = False
-                                st.rerun()
-                else:
-                    st.info("Ничего не найдено")
+                # Выпадающий список с результатами
+                if st.session_state.show_dropdown and st.session_state.search_query:
+                    st.session_state.search_results = search_participants(
+                        st.session_state.participant_type_select,
+                        st.session_state.search_query
+                    )
+                    
+                    if st.session_state.search_results:
+                        with st.expander("Результаты поиска", expanded=True):
+                            for person in st.session_state.search_results:
+                                full_name = f"{person[1]} {person[2]} {person[3] or ''}"
+                                if st.button(full_name):
+                                    st.session_state.selected_participant = {
+                                        'id': person[0],
+                                        'type': participant_type,
+                                        'name': full_name
+                                    }
+                                    st.session_state.search_query = full_name
+                                    st.session_state.show_dropdown = False
+                                    st.rerun()
+                    else:
+                        st.info("Ничего не найдено")
         
-        # Отображение выбранного участника
-        if st.session_state.selected_participant:
-            st.success(f"Выбран {st.session_state.selected_participant['type'].lower()}: {st.session_state.selected_participant['name']}")
+        # Отображение выбранного участника (или врача, если пользователь - врач)
+        if st.session_state.get('selected_participant'):
+            if is_doctor:
+                st.success(f"Ваше расписание")
+            else:
+                st.success(f"Выбран {st.session_state.selected_participant['type'].lower()}: {st.session_state.selected_participant['name']}")
             
             # Навигация по неделям
             col1, col2, col3 = st.columns([1, 2, 1])
@@ -194,19 +218,26 @@ def schedule_page():
                 if st.button("Следующая неделя ▶"):
                     st.session_state.current_week += timedelta(days=7)
                     st.rerun()
-            
+
             # Получаем данные расписания
             schedule_data = get_week_schedule(
                 participant_id=st.session_state.selected_participant['id'],
                 participant_type=st.session_state.selected_participant['type'],
                 week_start=st.session_state.current_week
             )
-            
+
             # Отображаем недельное расписание
             if schedule_data:
-                display_week_calendar(st.session_state.current_week, schedule_data)
+                display_week_calendar(
+                    st.session_state.current_week, 
+                    schedule_data,
+                    is_doctor_view=is_doctor
+                )
             else:
                 st.info("На выбранную неделю записей не найдено")
+        elif is_doctor:
+            st.error("Не удалось загрузить ваши данные. Пожалуйста, обратитесь к администратору.")
+
 
 if __name__ == "__main__":
     schedule_page()

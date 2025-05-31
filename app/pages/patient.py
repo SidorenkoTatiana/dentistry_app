@@ -1,15 +1,6 @@
 import streamlit as st
-import psycopg2
+from connection import conn, cursor
 from functions import user_panel, check_login
-
-conn = psycopg2.connect(
-    host="25.18.189.11",
-    port="5489",
-    dbname="postgres",
-    user="postgres",
-    password="TW3VJywpTx"
-)
-cursor = conn.cursor()
 
 
 def patient_page():

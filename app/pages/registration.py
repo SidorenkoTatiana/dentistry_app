@@ -4,17 +4,8 @@ import streamlit as st
 import psycopg2
 from psycopg2 import Error
 import hashlib
+from connection import conn, cursor
 from functions import mini_logo_right
-
-
-conn = psycopg2.connect(
-    host="25.18.189.11",
-    port="5489",
-    dbname="postgres",
-    user="postgres",
-    password="TW3VJywpTx"
-)
-cursor = conn.cursor()
 
 
 def registration_page():
