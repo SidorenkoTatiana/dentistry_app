@@ -6,6 +6,8 @@ from .pages.patient import patient_page
 from .pages.service import service_page
 from .pages.doctor import doctor_page
 from .pages.profile import profile_page
+from .pages.medcart import medcart_page
+from .pages.photos import photos_page
 
 PAGES = {
     "login": login_page,
@@ -15,5 +17,7 @@ PAGES = {
     "patient": patient_page,
     "service": service_page,
     "doctor": doctor_page,
-    "profile": profile_page
+    "profile": profile_page,
+    "medcart": medcart_page,
+    "photos": photos_page
 }
