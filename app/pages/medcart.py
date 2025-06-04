@@ -32,20 +32,26 @@ def medcart_page():
             # Отображение/редактирование
             history_text = st.text_area("История болезни", value=card[1] if card else "", height=300)
 
-            if st.button("Сохранить медкарту"):
-                if card:
-                    cursor.execute(
-                        "UPDATE Мед_карта_пациента SET История_болезни = %s WHERE id = %s",
-                        (history_text, card[0])
-                    )
-                    st.success("Медкарта обновлена.")
-                else:
-                    cursor.execute(
-                        "INSERT INTO Мед_карта_пациента (id_пациента, История_болезни) VALUES (%s, %s)",
-                        (patient_id, history_text)
-                    )
-                    st.success("Медкарта добавлена.")
-                conn.commit()
+            col_1, col_2 = st.columns([1, 1])
+            with col_1:
+                if st.button("Сохранить медкарту"):
+                    if card:
+                        cursor.execute(
+                            "UPDATE Мед_карта_пациента SET История_болезни = %s WHERE id = %s",
+                            (history_text, card[0])
+                        )
+                        st.success("Медкарта обновлена.")
+                    else:
+                        cursor.execute(
+                            "INSERT INTO Мед_карта_пациента (id_пациента, История_болезни) VALUES (%s, %s)",
+                            (patient_id, history_text)
+                        )
+                        st.success("Медкарта добавлена.")
+                    conn.commit()
+            with col_2:
+                if st.button("Вернуться"):
+                    st.session_state.current_page = "patient"
+                    st.rerun()
 
 
 if __name__ == "__main__":

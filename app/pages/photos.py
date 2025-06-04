@@ -47,6 +47,10 @@ def photos_page():
             for img_data, date in images:
                 st.image(Image.open(io.BytesIO(img_data)), caption=f"Дата: {date.strftime('%d.%m.%Y %H:%M:%S')}", use_column_width=True)
                 st.markdown("---")
+            
+            if st.button("Вернуться"):
+                st.session_state.current_page = "patient"
+                st.rerun()
 
 
 if __name__ == "__main__":

@@ -23,7 +23,6 @@ def get_user_type(user_id, doctor_id, curator_id):
 
 
 # панель управления пользователем
-# панель управления пользователем
 def user_panel():
     st.markdown("""
         <style>
@@ -78,40 +77,18 @@ def user_panel():
 
     if st.session_state.show_control_panel:
         with st.container():
-            if st.button("На главную", use_container_width=True):
-                # Определяем тип пользователя ДО очистки сессии
-                is_doctor = 'doctor_id' in st.session_state
-                is_curator = 'curator_id' in st.session_state
-                
-                # Сохраняем только необходимые данные
-                saved_data = {
-                    'doctor_id': st.session_state.get('doctor_id'),
-                    'curator_id': st.session_state.get('curator_id'),
-                    'user_id': st.session_state.get('user_id'),
-                    'full_name': st.session_state.get('full_name')
-                }
-                
-                # Полная очистка сессии
-                for key in list(st.session_state.keys()):
-                    del st.session_state[key]
-                
-                # Восстанавливаем сохраненные данные
-                for key, value in saved_data.items():
-                    if value is not None:
-                        st.session_state[key] = value
-                
-                # Устанавливаем нужную страницу
-                if is_doctor:
-                    st.session_state.current_page = "schedule"
-                elif is_curator:
-                    st.session_state.current_page = "dashboard"
-                else:
-                    st.session_state.current_page = "login"
-                
-                st.rerun()
-
             if st.button("Профиль", use_container_width=True):
                 st.session_state.current_page = "profile"
+                st.rerun()
+
+            if st.button("На главную", use_container_width=True):
+                # Определяем тип пользователя
+                if curator_id:
+                    st.session_state.current_page = "dashboard"
+                elif doctor_id:
+                    st.session_state.current_page = "schedule"
+                else:
+                    st.session_state.current_page = "login"
                 st.rerun()
 
             if st.button("Выход", use_container_width=True):
