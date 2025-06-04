@@ -1,7 +1,7 @@
-# Расписание
+# Расписание с функцией записи на прием
 import streamlit as st
 from connection import conn, cursor
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, time
 from functions import user_panel, check_login, mini_logo_right
 
 
@@ -59,8 +59,108 @@ def get_week_schedule(participant_id=None, participant_type=None, week_start=Non
     cursor.execute(query, (week_start, week_end, participant_id))
     return cursor.fetchall()
 
+def get_available_time_slots(doctor_id, date):
+    """Получает доступные временные слоты для записи к врачу"""
+    # Получаем рабочие часы врача (предположим, что с 9:00 до 17:00)
+    work_start = time(9, 0)
+    work_end = time(17, 0)
+    
+    # Получаем существующие записи на этот день
+    query = """
+    SELECT Время 
+    FROM Расписание 
+    WHERE id_врача = %s AND Дата = %s
+    ORDER BY Время
+    """
+    cursor.execute(query, (doctor_id, date))
+    existing_appointments = [t[0] for t in cursor.fetchall()]
+    
+    # Генерируем все возможные слоты с интервалом в 30 минут
+    time_slots = []
+    current_time = datetime.combine(date, work_start)
+    end_time = datetime.combine(date, work_end)
+    
+    while current_time + timedelta(minutes=30) <= end_time:
+        slot_start = current_time.time()
+        slot_end = (current_time + timedelta(minutes=30)).time()
+        
+        # Проверяем, не занят ли слот
+        is_available = True
+        for app_time in existing_appointments:
+            if slot_start <= app_time < slot_end:
+                is_available = False
+                break
+        
+        if is_available:
+            time_slots.append(slot_start)
+        
+        current_time += timedelta(minutes=30)
+    
+    return time_slots
 
-def display_week_calendar(week_start, schedule_data):
+def create_appointment(doctor_id, patient_id, service_id, appointment_date, appointment_time, comment=None):
+    """Создает новую запись на прием"""
+    query = """
+    INSERT INTO Расписание (id_врача, id_пациента, id_услуги, Дата, Время, Комментарий)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    RETURNING id
+    """
+    cursor.execute(query, (doctor_id, patient_id, service_id, appointment_date, appointment_time, comment))
+    conn.commit()
+    return cursor.fetchone()[0]
+
+def display_appointment_form(doctor_id, selected_date):
+    """Отображает форму для создания новой записи"""
+    with st.form(key='appointment_form'):
+        st.subheader("Новая запись на прием")
+        
+        # Получаем доступные временные слоты
+        time_slots = get_available_time_slots(doctor_id, selected_date)
+        
+        if not time_slots:
+            st.warning("Нет доступных временных слотов на выбранную дату")
+            return False
+        
+        # Выбор времени
+        selected_time = st.selectbox("Время приема", time_slots, format_func=lambda t: t.strftime('%H:%M'))
+        
+        # Поиск пациента
+        patient_search = st.text_input("Поиск пациента")
+        
+        selected_patient = None
+        if patient_search:
+            patients = search_participants("Пациент", patient_search)
+            if patients:
+                patient_options = {f"{p[1]} {p[2]} {p[3] or ''}": p[0] for p in patients}
+                patient_name = st.selectbox("Выберите пациента", options=list(patient_options.keys()))
+                selected_patient = patient_options[patient_name]
+            else:
+                st.warning("Пациенты не найдены")
+        
+        # Комментарий
+        comment = st.text_area("Комментарий (необязательно)")
+        
+        # Кнопка подтверждения
+        submitted = st.form_submit_button("Подтвердить запись")
+        
+        if submitted and selected_patient:
+            # Создаем запись
+            appointment_id = create_appointment(
+                doctor_id=doctor_id,
+                patient_id=selected_patient,
+                service_id=st.session_state.selected_service['id'],
+                appointment_date=selected_date,
+                appointment_time=selected_time,
+                comment=comment
+            )
+            st.success(f"Запись успешно создана! ID записи: {appointment_id}")
+            return True
+        elif submitted and not selected_patient:
+            st.error("Пожалуйста, выберите пациента")
+    
+    return False
+
+def display_week_calendar(week_start, schedule_data, is_doctor_view=False):
     """Отображает расписание в виде недельного календаря"""
     days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
     week_dates = [week_start + timedelta(days=i) for i in range(7)]
@@ -79,21 +179,29 @@ def display_week_calendar(week_start, schedule_data):
                 </div>
             """, unsafe_allow_html=True)
             
-            # Отображаем записи для каждого дня
+            # Отображаем записи для каждого дня (если они есть)
             day_records = [r for r in schedule_data if r[1] == current_date]
-            for record in day_records:
-                time = record[2].strftime('%H:%M')
-                if st.session_state.participant_type == "Врач":
-                    name = f"{record[7]} {record[8]} {record[9]}"
-                else:
-                    name = f"{record[4]} {record[5]} {record[6]}"
-                
-                with st.expander(f"{time} - {name}", expanded=False):
-                    st.write(f"**Услуга:** {record[10]}")
-                    if record[3]:
-                        st.write(f"**Комментарий:** {record[3]}")
-
-
+            if day_records:
+                for record in day_records:
+                    time_str = record[2].strftime('%H:%M')
+                    if is_doctor_view:
+                        name = f"{record[7]} {record[8]} {record[9] or ''}"
+                    else:
+                        name = f"{record[4]} {record[5]} {record[6] or ''}"
+                    
+                    with st.expander(f"{time_str} - {name}", expanded=False):
+                        st.write(f"**Услуга:** {record[10]}")
+                        if record[3]:
+                            st.write(f"**Комментарий:** {record[3]}")
+            else:
+                st.info("Нет записей")
+            
+            # Если это режим записи на прием, показываем кнопку для добавления записи
+            if st.session_state.get('schedule_mode') == "create_appointment" and not is_doctor_view:
+                if st.button("Добавить запись", key=f"add_appointment_{i}"):
+                    st.session_state['appointment_date'] = current_date
+                    st.session_state['show_appointment_form'] = True
+                    st.rerun()
 
 def schedule_page():
     check_login()
@@ -110,6 +218,8 @@ def schedule_page():
     if 'current_week' not in st.session_state:
         today = date.today()
         st.session_state.current_week = today - timedelta(days=today.weekday())
+    if 'show_appointment_form' not in st.session_state:
+        st.session_state.show_appointment_form = False
     
     # Основной интерфейс
     control_col, content_col = st.columns([2, 8], gap="medium")
@@ -126,11 +236,6 @@ def schedule_page():
         
         is_doctor = st.session_state.get('doctor_id') is not None
         
-        # Инициализация состояния
-        if 'current_week' not in st.session_state:
-            today = date.today()
-            st.session_state.current_week = today - timedelta(days=today.weekday())
-        
         # Для врача сразу устанавливаем его как выбранного участника
         if is_doctor and 'selected_participant' not in st.session_state:
             cursor.execute("SELECT id, Фамилия, Имя, Отчество FROM Врач WHERE id = %s", 
@@ -143,6 +248,14 @@ def schedule_page():
                     'name': f"{doctor[1]} {doctor[2]} {doctor[3] or ''}"
                 }
 
+        # Если это режим записи на прием и есть выбранный врач
+        if st.session_state.get('schedule_mode') == "create_appointment" and 'selected_doctor' in st.session_state:
+            st.session_state.selected_participant = {
+                'id': st.session_state.selected_doctor['id'],
+                'type': "Врач",
+                'name': st.session_state.selected_doctor['name']
+            }
+        
         if not is_doctor:
             # Инициализация дополнительных состояний для куратора
             if 'participant_type' not in st.session_state:
@@ -205,6 +318,10 @@ def schedule_page():
             else:
                 st.success(f"Выбран {st.session_state.selected_participant['type'].lower()}: {st.session_state.selected_participant['name']}")
             
+            # Если это режим записи на прием, показываем информацию о выбранной услуге
+            if st.session_state.get('schedule_mode') == "create_appointment" and 'selected_service' in st.session_state:
+                st.info(f"Услуга: {st.session_state.selected_service['name']}")
+            
             # Навигация по неделям
             col1, col2, col3 = st.columns([1, 2, 1])
             with col1:
@@ -226,15 +343,29 @@ def schedule_page():
                 week_start=st.session_state.current_week
             )
 
-            # Отображаем недельное расписание
-            if schedule_data:
-                display_week_calendar(
-                    st.session_state.current_week, 
-                    schedule_data,
-                    is_doctor_view=is_doctor
-                )
-            else:
-                st.info("На выбранную неделю записей не найдено")
+            # Если открыта форма записи на прием, показываем ее
+            if st.session_state.get('show_appointment_form'):
+                if display_appointment_form(
+                    doctor_id=st.session_state.selected_participant['id'],
+                    selected_date=st.session_state.get('appointment_date')
+                ):
+                    # После успешного создания записи сбрасываем состояния
+                    st.session_state.show_appointment_form = False
+                    st.session_state.schedule_mode = None
+                    if 'selected_service' in st.session_state:
+                        del st.session_state.selected_service
+                    if 'selected_doctor' in st.session_state:
+                        del st.session_state.selected_doctor
+                    st.rerun()
+                
+                if st.button("Отмена"):
+                    st.session_state.show_appointment_form = False
+                    st.rerun()
+            display_week_calendar(
+                st.session_state.current_week, 
+                schedule_data,
+                is_doctor_view=is_doctor
+            )
         elif is_doctor:
             st.error("Не удалось загрузить ваши данные. Пожалуйста, обратитесь к администратору.")
 
