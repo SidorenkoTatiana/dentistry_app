@@ -111,54 +111,76 @@ def create_appointment(doctor_id, patient_id, service_id, appointment_date, appo
 
 def display_appointment_form(doctor_id, selected_date):
     """Отображает форму для создания новой записи"""
-    with st.form(key='appointment_form'):
-        st.subheader("Новая запись на прием")
-        
-        # Получаем доступные временные слоты
-        time_slots = get_available_time_slots(doctor_id, selected_date)
-        
-        if not time_slots:
-            st.warning("Нет доступных временных слотов на выбранную дату")
-            return False
-        
-        # Выбор времени
-        selected_time = st.selectbox("Время приема", time_slots, format_func=lambda t: t.strftime('%H:%M'))
-        
-        # Поиск пациента
-        patient_search = st.text_input("Поиск пациента")
-        
-        selected_patient = None
-        if patient_search:
-            patients = search_participants("Пациент", patient_search)
-            if patients:
-                patient_options = {f"{p[1]} {p[2]} {p[3] or ''}": p[0] for p in patients}
-                patient_name = st.selectbox("Выберите пациента", options=list(patient_options.keys()))
-                selected_patient = patient_options[patient_name]
-            else:
-                st.warning("Пациенты не найдены")
-        
-        # Комментарий
-        comment = st.text_area("Комментарий (необязательно)")
-        
-        # Кнопка подтверждения
-        submitted = st.form_submit_button("Подтвердить запись")
-        
-        if submitted and selected_patient:
-            # Создаем запись
-            appointment_id = create_appointment(
-                doctor_id=doctor_id,
-                patient_id=selected_patient,
-                service_id=st.session_state.selected_service['id'],
-                appointment_date=selected_date,
-                appointment_time=selected_time,
-                comment=comment
+    st.subheader("Новая запись на прием")
+    
+    # 1. Блок поиска пациента (вне формы)
+    patient_search = st.text_input("Поиск пациента", key="patient_search")
+    
+    selected_patient = None
+    if patient_search:
+        patients = search_participants("Пациент", patient_search)
+        if patients:
+            patient_options = {f"{p[1]} {p[2]} {p[3] or ''}": p[0] for p in patients}
+            patient_name = st.selectbox(
+                "Выберите пациента", 
+                options=list(patient_options.keys()),
+                key="patient_select"
             )
-            st.success(f"Запись успешно создана! ID записи: {appointment_id}")
-            return True
-        elif submitted and not selected_patient:
-            st.error("Пожалуйста, выберите пациента")
+            selected_patient = patient_options[patient_name]
+            st.session_state.selected_patient_id = selected_patient  # Сохраняем выбранного пациента
+        else:
+            st.warning("Пациенты не найдены")
+    
+    # 2. Блок формы записи (только если пациент выбран)
+    if selected_patient or st.session_state.get('selected_patient_id'):
+        patient_id = selected_patient if selected_patient else st.session_state.selected_patient_id
+        
+        with st.form(key='appointment_form'):
+            # Получаем доступные временные слоты
+            time_slots = get_available_time_slots(doctor_id, selected_date)
+            
+            if not time_slots:
+                st.warning("Нет доступных временных слотов на выбранную дату")
+                return False
+            
+            # Выбор времени
+            selected_time = st.selectbox(
+                "Время приема", 
+                time_slots, 
+                format_func=lambda t: t.strftime('%H:%M'),
+                key="time_select"
+            )
+            
+            # Комментарий
+            comment = st.text_area("Комментарий (необязательно)", key="comment")
+            
+            # Кнопка подтверждения
+            submitted = st.form_submit_button("Подтвердить запись")
+            
+            if submitted:
+                try:
+                    appointment_id = create_appointment(
+                        doctor_id=doctor_id,
+                        patient_id=patient_id,
+                        service_id=st.session_state.selected_service['id'],
+                        appointment_date=selected_date,
+                        appointment_time=selected_time,
+                        comment=comment
+                    )
+                    st.success(f"Запись успешно создана! ID записи: {appointment_id}")
+                    # Очищаем выбранного пациента после успешного создания
+                    if 'selected_patient_id' in st.session_state:
+                        del st.session_state.selected_patient_id
+                    return True
+                except Exception as e:
+                    st.error(f"Ошибка при создании записи: {str(e)}")
+                    conn.rollback()
+    
+    elif patient_search and not selected_patient:
+        st.error("Пожалуйста, выберите пациента из списка")
     
     return False
+    
 
 def display_week_calendar(week_start, schedule_data, is_doctor_view=False):
     """Отображает расписание в виде недельного календаря"""
@@ -184,15 +206,17 @@ def display_week_calendar(week_start, schedule_data, is_doctor_view=False):
             if day_records:
                 for record in day_records:
                     time_str = record[2].strftime('%H:%M')
-                    if is_doctor_view:
-                        name = f"{record[7]} {record[8]} {record[9] or ''}"
-                    else:
-                        name = f"{record[4]} {record[5]} {record[6] or ''}"
+                    doctor_name = f"{record[4]} {record[5]} {record[6] or ''}"
+                    patient_name = f"{record[7]} {record[8]} {record[9] or ''}"
+                    service_name = record[10]
+                    comment = record[3]
                     
-                    with st.expander(f"{time_str} - {name}", expanded=False):
-                        st.write(f"**Услуга:** {record[10]}")
-                        if record[3]:
-                            st.write(f"**Комментарий:** {record[3]}")
+                    with st.expander(f"{time_str}", expanded=False):
+                        st.write(f"**Услуга:** {service_name}")
+                        st.write(f"**Врач:** {doctor_name}")
+                        st.write(f"**Пациент:** {patient_name}")
+                        if comment:
+                            st.write(f"**Комментарий:** {comment}")
             else:
                 st.info("Нет записей")
             
