@@ -1,7 +1,6 @@
 # Панель управления
 import streamlit as st
-from connection import conn, cursor
-from functions import user_panel, check_login
+from app.functions import make_interface
 
 
 def set_css():
@@ -18,10 +17,7 @@ def set_css():
 
 def dashboard_page():
     set_css()
-    check_login()
-    control_col, content_col = st.columns([2, 8], gap="medium")
-    with control_col:
-        user_panel()
+    content_col = make_interface()
 
     with content_col:
         st.markdown('<div class="main-content">', unsafe_allow_html=True)

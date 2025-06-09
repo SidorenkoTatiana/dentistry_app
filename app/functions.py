@@ -1,7 +1,7 @@
 import streamlit as st
 
 
-# проверка входа в систему
+# Проверка входа в систему
 def check_login():
     if 'show_control_panel' not in st.session_state:
         st.session_state.show_control_panel = False
@@ -12,7 +12,8 @@ def check_login():
         st.rerun()
         return
 
-# определение типа пользователя
+
+# Определение типа пользователя
 def get_user_type(user_id, doctor_id, curator_id):
     if doctor_id is not None:
         return "Врач"
@@ -22,7 +23,7 @@ def get_user_type(user_id, doctor_id, curator_id):
         return "Неизвестный тип"
 
 
-# панель управления пользователем
+# Панель управления пользователем
 def user_panel():
     st.markdown("""
         <style>
@@ -61,7 +62,7 @@ def user_panel():
     user_type = get_user_type(st.session_state['user_id'], doctor_id, curator_id)
 
     avatar_letter = user_type[0] if user_type != "Неизвестный тип" else "U"
-    
+
     if st.button(avatar_letter, key="avatar_button"):
         st.session_state.show_control_panel = not st.session_state.show_control_panel
         st.rerun()
@@ -98,8 +99,17 @@ def user_panel():
                 st.rerun()
 
 
-# отображение мини-логотипа справа
+# Отображение мини-логотипа справа
 def mini_logo_right():
     col1, col2 = st.columns([0.9, 0.1])
     with col2:
         st.image("dentistry_app/static/logo1.png", width=70)
+
+
+# Отображение страниц с колонкой профиля
+def make_interface():
+    check_login()
+    control_col, content_col = st.columns([2, 8], gap="medium")
+    with control_col:
+        user_panel()
+    return content_col

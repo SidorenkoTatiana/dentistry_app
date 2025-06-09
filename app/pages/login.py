@@ -2,7 +2,7 @@
 
 import streamlit as st
 import hashlib
-from connection import conn, cursor
+from app.connection import cursor
 
 
 # CSS стили

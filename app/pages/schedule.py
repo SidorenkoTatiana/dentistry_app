@@ -2,7 +2,7 @@
 import streamlit as st
 from connection import conn, cursor
 from datetime import datetime, timedelta, date, time
-from functions import user_panel, check_login, mini_logo_right
+from functions import user_panel, check_login, mini_logo_right, make_interface
 
 
 def search_participants(participant_type, search_term):
@@ -228,7 +228,6 @@ def display_week_calendar(week_start, schedule_data, is_doctor_view=False):
                     st.rerun()
 
 def schedule_page():
-    check_login()
     
     # Инициализация состояния
     if 'participant_type' not in st.session_state:
@@ -246,9 +245,7 @@ def schedule_page():
         st.session_state.show_appointment_form = False
     
     # Основной интерфейс
-    control_col, content_col = st.columns([2, 8], gap="medium")
-    with control_col:
-        user_panel()
+    content_col = make_interface()
 
     with content_col:
         mini_logo_right()

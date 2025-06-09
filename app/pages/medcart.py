@@ -1,14 +1,10 @@
 import streamlit as st
 from connection import conn, cursor
-from functions import check_login, user_panel, mini_logo_right
+from functions import mini_logo_right, make_interface
 
 
 def medcart_page():
-    check_login()
-    
-    control_col, content_col = st.columns([2, 8], gap="medium")
-    with control_col:
-        user_panel()
+    content_col = make_interface()
 
     with content_col:
         mini_logo_right()

@@ -1,13 +1,12 @@
 # Страница регистрации
 
 import streamlit as st
-import psycopg2
-from psycopg2 import Error
 import hashlib
-from connection import conn, cursor
-from functions import mini_logo_right
+from app.connection import conn, cursor
+from app.functions import mini_logo_right
 
 
+# Основная функция страницы
 def registration_page():
     left_col, right_col = st.columns([1, 1], gap="medium")
     with left_col:

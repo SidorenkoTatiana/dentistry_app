@@ -1,7 +1,7 @@
 # Страница выбора врача (для записи на приём)
 import streamlit as st
 from connection import conn, cursor
-from functions import check_login, user_panel, mini_logo_right
+from functions import check_login, user_panel, mini_logo_right, make_interface
 
 
 def get_doctors_for_service(service_id):
@@ -33,7 +33,6 @@ def display_doctor_card(doctor):
 
 
 def doctor_page():
-    check_login()
 
     if 'selected_service' not in st.session_state:
         st.error("Сначала выберите услугу")
@@ -43,9 +42,7 @@ def doctor_page():
     
     selected_service = st.session_state.selected_service
     
-    control_col, content_col = st.columns([2, 8], gap="medium")
-    with control_col:
-        user_panel()
+    content_col = make_interface()
 
     with content_col:
         mini_logo_right()

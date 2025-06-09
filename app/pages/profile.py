@@ -1,8 +1,7 @@
 # Страница управления пользователем
 import streamlit as st
-from connection import conn, cursor
-from psycopg2 import Error
-from functions import user_panel, check_login, mini_logo_right
+from app.connection import conn, cursor
+from app.functions import user_panel, check_login, mini_logo_right, make_interface
 
 
 # Загрузка данных пользователя
@@ -11,7 +10,7 @@ def load_user_data():
         cursor.execute(
             """
             SELECT 'Врач' as user_type, Фамилия, Имя, Отчество, Номер_телефона
-            FROM Врач 
+            FROM Врач
             WHERE id = %s
             """,
             (st.session_state['doctor_id'],))
@@ -19,7 +18,7 @@ def load_user_data():
         cursor.execute(
             """
             SELECT 'Куратор' as user_type, Фамилия, Имя, Отчество, Номер_телефона
-            FROM Куратор 
+            FROM Куратор
             WHERE id = %s
             """,
             (st.session_state['curator_id'],))
@@ -32,7 +31,7 @@ def save_changes(surname, name, patronymic, phone):
     if st.session_state.get('doctor_id'):
         cursor.execute(
             """
-            UPDATE Врач 
+            UPDATE Врач
             SET Фамилия = %s, Имя = %s, Отчество = %s, Номер_телефона = %s
             WHERE id = %s
             """,
@@ -40,7 +39,7 @@ def save_changes(surname, name, patronymic, phone):
     else:
         cursor.execute(
             """
-            UPDATE Куратор 
+            UPDATE Куратор
             SET Фамилия = %s, Имя = %s, Отчество = %s, Номер_телефона = %s
             WHERE id = %s
             """,
@@ -53,10 +52,7 @@ def save_changes(surname, name, patronymic, phone):
 
 
 def profile_page():
-    check_login()
-    control_col, content_col = st.columns([2, 8], gap="medium")
-    with control_col:
-        user_panel()
+    content_col = make_interface()
 
     with content_col:
         mini_logo_right()
@@ -88,10 +84,10 @@ def profile_page():
                 else:
                     if save_changes(surname, name, patronymic, phone):
                         st.rerun()
-            # Подумать над кнопкой назад
             if cancel:
                 st.session_state.current_page = st.session_state.get('previous_page', 'dashboard')
                 st.rerun()
+
 
 if __name__ == "__main__":
     profile_page()
