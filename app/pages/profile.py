@@ -77,7 +77,7 @@ def profile_page():
             with col1:
                 submitted = st.form_submit_button("Сохранить изменения")
             with col2:
-                cancel = st.form_submit_button("Назад")
+                cancel = st.form_submit_button("На главную")
 
             if submitted:
                 if not all([surname, name, phone]):
@@ -86,7 +86,10 @@ def profile_page():
                     if save_changes(surname, name, patronymic, phone):
                         st.rerun()
             if cancel:
-                st.session_state.current_page = st.session_state.get('previous_page', 'dashboard')
+                if user_type == "Куратор":
+                    st.session_state.current_page = "dashboard"
+                elif user_type == "Врач":
+                    st.session_state.current_page = "schedule"
                 st.rerun()
 
 
