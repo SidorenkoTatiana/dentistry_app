@@ -1,8 +1,9 @@
 import streamlit as st
-from connection import conn, cursor
-from functions import check_login, user_panel, mini_logo_right, make_interface
+from app.connection import conn, cursor
+from app.functions import mini_logo_right, make_interface
 
 
+# Основная функция страницы
 def patient_page():
     content_col = make_interface()
 
@@ -102,6 +103,7 @@ def patient_page():
             if st.button("Перейти к снимкам"):
                 st.session_state.current_page = "photos"
                 st.rerun()
+
 
 if __name__ == "__main__":
     patient_page()

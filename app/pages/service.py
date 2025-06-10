@@ -1,9 +1,10 @@
 # Страница выбора услуг (для записи на приём)
 import streamlit as st
-from connection import conn, cursor
-from functions import check_login, user_panel, mini_logo_right, make_interface
+from app.connection import cursor
+from app.functions import mini_logo_right, make_interface
 
 
+# Получение услуг из базы данных
 def get_all_services(search_query=None):
     if search_query:
         query = """
@@ -25,8 +26,8 @@ def get_all_services(search_query=None):
     return cursor.fetchall()
 
 
+# Отображение карточки услуги
 def display_service_card(service):
-    """Отображает карточку услуги"""
     with st.container():
         st.markdown(f"""
         <div style="
@@ -40,8 +41,8 @@ def display_service_card(service):
         """, unsafe_allow_html=True)
 
 
+# Основная функция страницы
 def service_page():
-
     if 'search_query' not in st.session_state:
         st.session_state.search_query = ""
 

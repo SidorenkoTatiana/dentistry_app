@@ -1,10 +1,11 @@
 import streamlit as st
-from connection import conn, cursor
-from functions import check_login, user_panel, mini_logo_right, make_interface
+from app.connection import conn, cursor
+from app.functions import mini_logo_right, make_interface
 from PIL import Image
 import io
 
 
+# Основная функция страницы
 def photos_page():
     content_col = make_interface()
 
@@ -12,13 +13,11 @@ def photos_page():
         mini_logo_right()
         st.subheader("Снимки пациента")
 
-        # Проверка, выбран ли пациент
         if "selected_patient_id" not in st.session_state or st.session_state.selected_patient_id is None:
             st.warning("Сначала выберите пациента на главной странице.")
         else:
             patient_id = st.session_state.selected_patient_id
 
-            # Загрузка изображения
             uploaded_file = st.file_uploader("Загрузите снимок", type=["jpg", "jpeg", "png"])
             if uploaded_file is not None:
                 binary_data = uploaded_file.read()
@@ -33,7 +32,6 @@ def photos_page():
             st.markdown("---")
             st.write("Загруженные снимки:")
 
-            # Вывод загруженных снимков
             cursor.execute(
                 "SELECT снимок, дата FROM Снимки_пациента WHERE id_пациента = %s ORDER BY дата DESC",
                 (patient_id,)
@@ -43,7 +41,7 @@ def photos_page():
             for img_data, date in images:
                 st.image(Image.open(io.BytesIO(img_data)), caption=f"Дата: {date.strftime('%d.%m.%Y %H:%M:%S')}", use_column_width=True)
                 st.markdown("---")
-            
+
             if st.button("Вернуться"):
                 st.session_state.current_page = "patient"
                 st.rerun()

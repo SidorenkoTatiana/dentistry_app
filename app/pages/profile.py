@@ -1,7 +1,7 @@
 # Страница управления пользователем
 import streamlit as st
 from app.connection import conn, cursor
-from app.functions import user_panel, check_login, mini_logo_right, make_interface
+from app.functions import mini_logo_right, make_interface
 
 
 # Загрузка данных пользователя
@@ -51,6 +51,7 @@ def save_changes(surname, name, patronymic, phone):
     return True
 
 
+# Основная функция страницы
 def profile_page():
     content_col = make_interface()
 

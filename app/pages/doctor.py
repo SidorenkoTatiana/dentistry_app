@@ -1,9 +1,10 @@
 # Страница выбора врача (для записи на приём)
 import streamlit as st
-from connection import conn, cursor
-from functions import check_login, user_panel, mini_logo_right, make_interface
+from app.connection import cursor
+from app.functions import mini_logo_right, make_interface
 
 
+# Получение списка врачей с подходящей услуге специальностью
 def get_doctors_for_service(service_id):
     query = """
         SELECT d.id, d.Фамилия, d.Имя, d.Отчество, s.Специальность
@@ -17,6 +18,7 @@ def get_doctors_for_service(service_id):
     return cursor.fetchall()
 
 
+# Отображение карточки врача
 def display_doctor_card(doctor):
     with st.container():
         st.markdown(f"""
@@ -32,16 +34,16 @@ def display_doctor_card(doctor):
         """, unsafe_allow_html=True)
 
 
+# Основная функция страницы
 def doctor_page():
-
     if 'selected_service' not in st.session_state:
         st.error("Сначала выберите услугу")
         st.session_state.current_page = "service"
         st.rerun()
         return
-    
+
     selected_service = st.session_state.selected_service
-    
+
     content_col = make_interface()
 
     with content_col:
@@ -49,7 +51,7 @@ def doctor_page():
         st.title(f"Выберите врача для услуги: {selected_service['name']}")
 
         doctors = get_doctors_for_service(selected_service['id'])
-        
+
         if doctors:
             st.markdown(f"**Найдено врачей:** {len(doctors)}")
 
@@ -63,11 +65,12 @@ def doctor_page():
                         'speciality': doctor[4]
                     }
                     st.session_state.current_page = "schedule"
-                    st.session_state.schedule_mode = "create_appointment"  # Новый режим
+                    st.session_state.schedule_mode = "create_appointment"
                     st.rerun()
 
         else:
             st.warning("Нет доступных врачей для выбранной услуги")
+
 
 if __name__ == "__main__":
     doctor_page()

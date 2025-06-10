@@ -1,8 +1,9 @@
 import streamlit as st
-from connection import conn, cursor
-from functions import mini_logo_right, make_interface
+from app.connection import conn, cursor
+from app.functions import mini_logo_right, make_interface
 
 
+# Основная функция страницы
 def medcart_page():
     content_col = make_interface()
 
@@ -10,22 +11,18 @@ def medcart_page():
         mini_logo_right()
         st.subheader("Медкарта пациента")
 
-        # Проверка, выбран ли пациент
         if "selected_patient_id" not in st.session_state or st.session_state.selected_patient_id is None:
             st.warning("Сначала выберите пациента на главной странице.")
         else:
             patient_id = st.session_state.selected_patient_id
 
-            # Получение данных пациента
             cursor.execute("SELECT Фамилия, Имя, Отчество FROM Пациент WHERE id = %s", (patient_id,))
             p = cursor.fetchone()
             st.write(f"Пациент: {p[0]} {p[1]} {p[2]}")
 
-            # Получение текущей медкарты
             cursor.execute("SELECT id, История_болезни FROM Мед_карта_пациента WHERE id_пациента = %s", (patient_id,))
             card = cursor.fetchone()
 
-            # Отображение/редактирование
             history_text = st.text_area("История болезни", value=card[1] if card else "", height=300)
 
             col_1, col_2 = st.columns([1, 1])
