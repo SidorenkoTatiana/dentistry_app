@@ -75,7 +75,6 @@ def get_available_time_slots(doctor_id, date):
     cursor.execute(query, (doctor_id, date))
     existing_appointments = [t[0] for t in cursor.fetchall()]
 
-    # Генерируем все возможные слоты с интервалом в 30 минут
     time_slots = []
     current_time = datetime.combine(date, work_start)
     end_time = datetime.combine(date, work_end)
@@ -356,7 +355,7 @@ def schedule_page():
                     if 'selected_doctor' in st.session_state:
                         del st.session_state.selected_doctor
                     st.rerun()
-                
+
                 if st.button("Отмена"):
                     st.session_state.show_appointment_form = False
                     st.rerun()
@@ -366,7 +365,30 @@ def schedule_page():
                 is_doctor_view=is_doctor
             )
         elif is_doctor:
-            st.error("Не удалось загрузить ваши данные. Пожалуйста, обратитесь к администратору.")
+            try:
+                cursor.execute("""
+                    SELECT Фамилия, Имя, Отчество 
+                    FROM Врач 
+                    WHERE id = %s
+                """, (st.session_state['doctor_id'],))
+                doctor_data = cursor.fetchone()
+
+                if doctor_data:
+                    last_name, first_name, patronymic = doctor_data
+                    doctor_name = f"{last_name} {first_name} {patronymic or ''}".strip()
+                    st.success(f"Добро пожаловать, доктор {doctor_name}!")
+
+                    st.session_state.selected_participant = {
+                        'id': st.session_state['doctor_id'],
+                        'type': "Врач",
+                        'name': doctor_name
+                    }
+                    st.rerun()
+                else:
+                    st.error("Ваш профиль не найден в системе")
+                    
+            except Exception as e:
+                st.error(f"Ошибка при загрузке вашего профиля: {str(e)}")
 
 
 if __name__ == "__main__":
