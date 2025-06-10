@@ -12,7 +12,7 @@ def medcart_page():
         st.subheader("Медкарта пациента")
 
         if "selected_patient_id" not in st.session_state or st.session_state.selected_patient_id is None:
-            st.warning("Сначала выберите пациента на главной странице.")
+            st.warning("Сначала выберите пациента на главной странице")
         else:
             patient_id = st.session_state.selected_patient_id
 
@@ -33,13 +33,13 @@ def medcart_page():
                             "UPDATE Мед_карта_пациента SET История_болезни = %s WHERE id = %s",
                             (history_text, card[0])
                         )
-                        st.success("Медкарта обновлена.")
+                        st.success("Медкарта обновлена")
                     else:
                         cursor.execute(
                             "INSERT INTO Мед_карта_пациента (id_пациента, История_болезни) VALUES (%s, %s)",
                             (patient_id, history_text)
                         )
-                        st.success("Медкарта добавлена.")
+                        st.success("Медкарта добавлена")
                     conn.commit()
             with col_2:
                 if st.button("Вернуться"):

@@ -52,6 +52,27 @@ def check_login(username, password):
     return result
 
 
+# Обработка входа
+def handle_login(username, password):
+    if username and password:
+        user_data = check_login(username, password)
+        if user_data:
+            is_doctor = user_data[1] is not None
+
+            st.session_state.update({
+                'user_id': user_data[0],
+                'doctor_id': user_data[1],
+                'curator_id': user_data[2],
+                'full_name': user_data[3],
+                'current_page': 'schedule' if is_doctor else 'dashboard'
+            })
+            st.rerun()
+        else:
+            st.error("Неверный логин или пароль")
+    else:
+        st.warning("Пожалуйста, введите логин и пароль")
+
+
 # Основная функция страницы
 def login_page():
     local_css()
@@ -74,27 +95,6 @@ def login_page():
             if st.form_submit_button("Регистрация"):
                 st.session_state.current_page = "registration"
                 st.rerun()
-
-
-# Обработка входа
-def handle_login(username, password):
-    if username and password:
-        user_data = check_login(username, password)
-        if user_data:
-            is_doctor = user_data[1] is not None
-
-            st.session_state.update({
-                'user_id': user_data[0],
-                'doctor_id': user_data[1],
-                'curator_id': user_data[2],
-                'full_name': user_data[3],
-                'current_page': 'schedule' if is_doctor else 'dashboard'
-            })
-            st.rerun()
-        else:
-            st.error("Неверный логин или пароль")
-    else:
-        st.warning("Пожалуйста, введите логин и пароль")
 
 
 if __name__ == "__main__":

@@ -12,17 +12,22 @@ def patient_page():
         st.title("Пациенты")
 
         with st.expander("➕ Добавить пациента"):
-            surname = st.text_input("Фамилия")
-            name = st.text_input("Имя")
+            surname = st.text_input("Фамилия*")
+            name = st.text_input("Имя*")
             patronymic = st.text_input("Отчество")
-            birth_date = st.date_input("Дата рождения")
+            birth_date = st.date_input("Дата рождения*")
             phone = st.text_input("Номер телефона")
-            snils = st.text_input("СНИЛС")
-            oms = st.text_input("ОМС")
+            snils = st.text_input("СНИЛС*")
+            oms = st.text_input("ОМС*")
             dms = st.text_input("ДМС")
-            passport = st.text_input("Паспорт")
+            passport = st.text_input("Паспорт*")
+
+            st.markdown("<sup>*</sup> Обязательные поля", unsafe_allow_html=True)
 
             if st.button("Добавить пациента"):
+                if not surname or not name or not birth_date or not snils or not oms or not passport:
+                    st.error("Пожалуйста, заполните все обязательные поля (помеченные *)")
+                    return
                 try:
                     cursor.execute("""
                         INSERT INTO Пациент 

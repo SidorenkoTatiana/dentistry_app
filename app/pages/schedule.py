@@ -161,7 +161,7 @@ def display_appointment_form(doctor_id, selected_date):
                         appointment_time=selected_time,
                         comment=comment
                     )
-                    st.success(f"Запись успешно создана! ID записи: {appointment_id}")
+                    st.success(f"Запись успешно создана")
                     if 'selected_patient_id' in st.session_state:
                         del st.session_state.selected_patient_id
                     return True

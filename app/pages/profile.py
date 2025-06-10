@@ -46,7 +46,7 @@ def save_changes(surname, name, patronymic, phone):
             (surname, name, patronymic, phone, st.session_state['curator_id']))
 
     conn.commit()
-    st.success("Изменения сохранены успешно!")
+    st.success("Изменения сохранены успешно")
     st.session_state.full_name = f"{surname} {name} {patronymic}"
     return True
 

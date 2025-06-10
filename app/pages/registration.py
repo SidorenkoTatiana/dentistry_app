@@ -14,15 +14,22 @@ def registration_page():
     with right_col:
         mini_logo_right()
 
-    user_type = st.selectbox("Тип пользователя", ("Куратор", "Врач"))
-    surname = st.text_input("Фамилия")
-    name = st.text_input("Имя")
+    user_type = st.selectbox("Тип пользователя*", ("Куратор", "Врач"))
+    surname = st.text_input("Фамилия*")
+    name = st.text_input("Имя*")
     patronymic = st.text_input("Отчество")
     phone = st.text_input("Номер телефона")
-    login = st.text_input("Логин")
-    password = st.text_input("Пароль", type="password")
+    login = st.text_input("Логин*")
+    password = st.text_input("Пароль*", type="password")
+
+    st.markdown("<sup>*</sup> Обязательные поля", unsafe_allow_html=True)
 
     if st.button("Регистрация"):
+        # Проверка заполнения обязательных полей
+        if not surname or not name or not login or not password:
+            st.error("Пожалуйста, заполните все обязательные поля (помеченные *)")
+            return
+
         if user_type == "Куратор":
             cursor.execute(
                 """

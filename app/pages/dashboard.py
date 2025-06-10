@@ -3,20 +3,8 @@ import streamlit as st
 from app.functions import make_interface
 
 
-def set_css():
-    st.markdown("""
-    <style>
-        .main-content {
-            margin-left: 250px;
-            padding: 20px;
-        }
-
-    </style>
-    """, unsafe_allow_html=True)
-
-
+# Основная функция страницы
 def dashboard_page():
-    set_css()
     content_col = make_interface()
 
     with content_col:
