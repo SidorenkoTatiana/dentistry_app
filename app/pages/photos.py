@@ -1,4 +1,5 @@
 import streamlit as st
+import psycopg2
 from app.connection import conn, cursor
 from app.functions import mini_logo_right, make_interface
 from PIL import Image
@@ -39,7 +40,7 @@ def photos_page():
             images = cursor.fetchall()
 
             for img_data, date in images:
-                st.image(Image.open(io.BytesIO(img_data)), caption=f"Дата: {date.strftime('%d.%m.%Y %H:%M:%S')}", use_column_width=True)
+                st.image(Image.open(io.BytesIO(img_data)), caption=f"Дата: {date.strftime('%d.%m.%Y')}", use_container_width=True)
                 st.markdown("---")
 
             if st.button("Вернуться"):
